@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183f3a">
+  <meta name="description" content="一个无需登录、完全由你定义内容与节奏的本地专注计时器。">
+  <title>Focus Ledger · 专注账本</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23214f48'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Georgia' font-size='24' fill='white'%3EFL%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="brand-mark" aria-hidden="true">FL</div>
+        <div>
+          <p class="kicker">FOCUS LEDGER</p>
+          <h1>专注账本</h1>
+          <p class="subtitle">内容、环节与时长都由你定义。数据只留在当前浏览器。</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <label class="daily-goal">
+          <span>每日目标</span>
+          <input id="dailyGoal" type="number" min="1" max="1440" step="5" inputmode="numeric">
+          <span>分钟</span>
+        </label>
+        <button class="button button-light" id="addCategoryButton" type="button">＋ 新建分类</button>
+        <button class="icon-button" id="themeButton" type="button" aria-label="切换明暗主题" title="切换明暗主题">◐</button>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="数据工具">
+      <div class="privacy-note"><span class="status-dot"></span>离线可用 · 无账号 · 无数据上传</div>
+      <div class="toolbar-actions">
+        <button class="text-button" id="exportCsvButton" type="button">导出 CSV</button>
+        <button class="text-button" id="exportJsonButton" type="button">备份 JSON</button>
+        <button class="text-button" id="importButton" type="button">导入备份</button>
+        <input id="importInput" type="file" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
+    <nav class="category-strip" id="categoryStrip" aria-label="分类"></nav>
+
+    <section class="metrics" id="metrics" aria-label="进度概览"></section>
+
+    <main class="workspace">
+      <aside class="panel task-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">TASKS</p>
+            <h2 id="taskListTitle">任务</h2>
+          </div>
+          <button class="button button-primary button-small" id="addTaskButton" type="button">＋ 添加任务</button>
+        </div>
+        <div class="filters">
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="搜索任务或备注">
+          </label>
+          <select id="filterSelect" aria-label="筛选任务状态">
+            <option value="all">全部</option>
+            <option value="todo">进行中</option>
+            <option value="done">已完成</option>
+          </select>
+        </div>
+        <div class="task-list" id="taskList"></div>
+      </aside>
+
+      <section class="panel detail-panel" id="detailPanel"></section>
+    </main>
+
+    <footer>
+      <span>Focus Ledger</span>
+      <span>你的时间，按你的方式记录。</span>
+    </footer>
+  </div>
+
+  <div class="modal" id="categoryModal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <form class="modal-card modal-card-small" id="categoryForm">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">CATEGORY</p>
+          <h2 id="categoryModalTitle">新建分类</h2>
+        </div>
+        <button class="icon-button close-button" data-close-modal type="button" aria-label="关闭">×</button>
+      </div>
+      <input id="categoryId" type="hidden">
+      <label class="field-label">
+        <span>分类名称</span>
+        <input class="field" id="categoryName" maxlength="30" required placeholder="例如：阅读、健身、个人项目">
+      </label>
+      <fieldset class="color-fieldset">
+        <legend>标记颜色</legend>
+        <div class="color-options" id="colorOptions"></div>
+      </fieldset>
+      <div class="modal-actions split-actions">
+        <button class="button button-danger hidden" id="deleteCategoryButton" type="button">删除分类</button>
+        <div>
+          <button class="button button-ghost" data-close-modal type="button">取消</button>
+          <button class="button button-primary" type="submit">保存</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+    <form class="modal-card" id="taskForm">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">CUSTOM TASK</p>
+          <h2 id="taskModalTitle">添加任务</h2>
+        </div>
+        <button class="icon-button close-button" data-close-modal type="button" aria-label="关闭">×</button>
+      </div>
+      <input id="taskId" type="hidden">
+      <div class="form-grid">
+        <label class="field-label">
+          <span>任务名称</span>
+          <input class="field" id="taskName" maxlength="80" required placeholder="你准备完成什么？">
+        </label>
+        <label class="field-label">
+          <span>所属分类</span>
+          <select class="field" id="taskCategory" required></select>
+        </label>
+      </div>
+      <label class="field-label">
+        <span>任务说明（可选）</span>
+        <textarea class="field" id="taskDescription" maxlength="500" placeholder="记录目标、完成标准或提醒……"></textarea>
+      </label>
+      <div class="steps-heading">
+        <div>
+          <span>计时环节</span>
+          <small>每个任务可以拥有任意数量的自定义环节</small>
+        </div>
+        <button class="text-button" id="addStepButton" type="button">＋ 添加环节</button>
+      </div>
+      <div class="step-editor" id="stepEditor"></div>
+      <div class="modal-actions split-actions">
+        <button class="button button-danger hidden" id="deleteTaskButton" type="button">删除任务</button>
+        <div>
+          <button class="button button-ghost" data-close-modal type="button">取消</button>
+          <button class="button button-primary" type="submit">保存任务</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-card modal-card-small">
+      <div class="confirm-icon" aria-hidden="true">?</div>
+      <h2 id="confirmTitle">请确认</h2>
+      <p id="confirmMessage"></p>
+      <div class="modal-actions">
+        <button class="button button-ghost" id="confirmCancel" type="button">取消</button>
+        <button class="button button-danger-solid" id="confirmAccept" type="button">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
