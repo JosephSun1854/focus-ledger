@@ -569,9 +569,7 @@
         askConfirm("将本环节归零？", "这会清除该环节已经记录的时间。", () => {
           pauseTimer(false);
           const record = taskRecord(task.id);
-          const previous = Number(record.steps[action.dataset.step]) || 0;
           record.steps[action.dataset.step] = 0;
-          addDaily(-previous);
           renderAll();
           showToast("环节计时已归零");
         });
@@ -605,9 +603,7 @@
         return;
       }
       const record = taskRecord(task.id);
-      const previous = Number(record.steps[stepId]) || 0;
       record.steps[stepId] = value;
-      addDaily(value - previous);
       renderAll();
       return;
     }
